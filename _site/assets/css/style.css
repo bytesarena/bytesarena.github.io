@@ -49,7 +49,7 @@ li.side {
     margin-top: 5px;
 }
 
-@media screen and (max-width: 700px) {
+@media screen and (max-width: 900px) {
 .content{
   margin-top: 5px;
   width: 400px;;
