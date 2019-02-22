@@ -121,7 +121,7 @@ body {
   float: right;
 }
 
-@media screen and (max-width: 500px) {
+@media screen and (max-width: 800px) {
   .header a {
     float: none;
     display: block;
@@ -131,5 +131,8 @@ body {
   .header-right {
     float: none;
   }
+  .content {
+  margin-top: 30%;
+}
 }
 
