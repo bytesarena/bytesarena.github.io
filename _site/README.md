@@ -2,7 +2,7 @@
 
 This is the repo for the github site [bytesarena.com](https://bytesarena.com).
 
-#About Site
+## About Site
 
 For years, I have been learning loads of stuff from the Internet for free. 
 
