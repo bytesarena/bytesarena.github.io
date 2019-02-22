@@ -52,7 +52,7 @@ li.side {
 @media screen and (max-width: 700px) {
 .content{
   margin-top: 5px;
-  width: 650px;
+  width: 100%;
 }
 
 }
