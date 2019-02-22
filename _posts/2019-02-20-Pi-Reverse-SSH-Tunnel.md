@@ -1,0 +1,187 @@
+---
+layout: post
+title: "Reverse SSH Tunnel"
+categories: [Linux]
+---
+I have a raspberry pi running at home taking care of some home networking/automation stuff. I may at times find myself in a need to log into the Pi while not at home to check up on things. 
+Without a dedicated public IP address this often proved a difficult task. Earlier I was using an ngrok tunnel for this. Read more about ngrok [here](https://ngrok.com/).
+The problem with this was that ngrok would give me a different URL every time the Pi reboots. To get around this, I was using a system where I would send an email to a gmail account set up specifically for the Pi and the Pi would respond back with the ngrok URL. I will write a post about this later and link it here. 
+Since I ran into some issues with this, I decided to go a different route which this article is about. 
+
+
+
+## Using a reverse SSH tunnel. 
+
+To access your home server from anywhere in the world, you would need a middleman SSH server on the cloud. For this, I have setup an instance on AWS. 
+If you are new to AWS, you can basically setup an instance for free (there are caveats, read about it [here](https://aws.amazon.com/free/)).
+
+I used an Ubuntu 18.04 image that was eligible for free tier usage in AWS. 
+
+The basics of how a reverse SSH tunnel works is this. 
+
+By creating a reverse SSH tunnel from the local machine(Raspberry pi at home) to the middleman server(AWS instance), you are creating a tunnel for the middle man server to connect back to the local machine. Essentially, you are mapping a socket(combination of an IP address and a port number) on the remote machine to a socket on the local machine. 
+ Through this connection, you will be able to SSH from the remote machine to the local machine even though the local machine may be behind a NAT device. 
+ 
+ ## Basic Architecture
+ 
+ ![reverse tunnel](https://user-images.githubusercontent.com/33704221/48302454-2d371200-e523-11e8-9ad5-8415ac89712a.png)
+ 
+ 
+ ## How its done.
+ 
+ Here is how you can create a reverse ssh tunnel from the local machine to the remote machine. 
+ 
+ ```
+ ssh -R 7070:localhost:22 root@<ip of aws instance>
+ ```
+
+Let's examine the above example.
+
+Here we used the ***-R*** flag to specify remote entry point. The exact syntax of using this is ***-R [bind_address:]port:host:hostport***. In our case this would be localhost:7070:localhost:22. The first ***localhost*** is the address on the remote machine where the remote entrypoint should be. We skipped this in the example because it is by default localhost. The ***port 7070*** is the TCP port on the remote machine which will listen for SSH connections to the local machine. The next ***localhost*** refers to the local machine from which the tunnel is created. The ***port 22*** at the end is the local port (default SSH port) to which connections will be forwarded from port  7070 on the remote host. 
+
+
+Once the tunnel is created,You can see the remote machine listening on TCP port 7070 with netstat run on the remote machine. 
+
+```
+netstat -tnlp| grep 7070
+tcp        0      0 127.0.0.1:7070            0.0.0.0:*               LISTEN      1621/sshd: root@pts
+```
+
+
+you can SSH into the local machine from the remote machine as below. 
+
+```
+ssh root@localhost -p 7070
+```
+
+Basically, we are creating an SSH tunnel from the remote machine(AWS instance) to itself(localhost) on port 7070. This will be connected to the local machine(Raspberry Pi).
+
+## Additional requirements
+
+What we see above is how a simple reverse SSH tunnel is set up. However, I had some additional requirements to satisfy. 
+
+* The reverse SSH tunnel needed to start when the local machine starts or reboots. It should ideally run as a service. 
+* The reverse SSH tunnel needed to run in the background, but give me an opportunity to check its status if needed.
+* As seen in the above ***netstat*** output, the remote machine listens for connections on the remote entrypoint on loopback. This means I will need to SSH into the remote host and then SSH into the local machine. I needed to avoid the extra step.
+
+Here is how I tackled these problems.
+
+**Note**
+
+I first added the SSH keys to the AWS instance on my local machine. 
+###### On local machine
+```
+ssh-keygen
+cat aws-ssh-key.pem >> ~/.ssh/authorized_keys
+```
+Here *aws-ssh-keys.pem* is the ssh key file downloaded from AWS.
+#### Start as a service on boot, run in the background and allow checking status
+
+##### On the local machine
+
+I first created a bash script that starts a TMUX session and runs creates the reverse SSH tunnel from it. [This](https://github.com/tmux/tmux/wiki) is a good place to read up on TMUX. Its definitely worth the read.
+
+Here is the script.
+
+> The IP address and SSH port of my AWS instance is redacted for security.
+
+```shell
+#!/bin/bash
+
+n="connectoverwatch"
+if [ $(tmux list-sessions | grep $n) ] ; then
+        tmux kill-session -t $n
+        tmux new -d -s $n
+else
+
+        tmux new -d -s $n
+fi
+
+tmux send-keys -t $n 'ssh -vvv -Nf  -R 7070:localhost:22  root@xx.xx.xx.xx -p xx &'  C-m                                                                                                                                                                          
+```
+
+Then, I borrowed some code from https://github.com/frdmn/service-daemons and made the script into a service named *connectoverwatch*.
+
+Now I could start and stop the service and it would start with startup.
+
+```
+service connectoverwatch status
+● connectoverwatch.service - LSB: Example
+   Loaded: loaded (/etc/init.d/connectoverwatch; generated; vendor preset: enabled)
+   Active: active (running) since Sat 2018-11-10 00:53:30 PST; 42min ago
+     Docs: man:systemd-sysv-generator(8)
+  Process: 444 ExecStart=/etc/init.d/connectoverwatch start (code=exited, status=0/SUCCESS)
+   Memory: 10.4M
+      CPU: 1.612s
+   CGroup: /system.slice/connectoverwatch.service
+           ├484 tmux new -d -s connectoverwatch
+           ├485 -zsh
+           └920 ssh -vvv -Nf -R 7070:localhost:22 root@xx.xx.xx.xx -p xx
+
+Nov 10 00:53:29 jarvis systemd[1]: Starting LSB: Example...
+Nov 10 00:53:30 jarvis connectoverwatch[444]: Starting 'connectoverwatch'... done
+Nov 10 00:53:30 jarvis systemd[1]: Started LSB: Example.
+```
+
+I could also attach to the TMUX session and view the verbose output from my reverse SSH tunnel.
+
+#### Remove the additional step of SSH to remote machine, then SSH to local machine.
+
+##### On remote machine
+
+The idea here is to bind the remote entry point TCP port to 0.0.0.0 so that I can SSH to the remote host on the remote entrypoint port (7070) and be immediately connected to my local machine. 
+
+The defaule SSHD configuration does not allow this. 
+
+To do this, i had to unconnect and change the below line in the file */etc/ssh/sshd_config*,
+
+From
+```
+#GatewayPorts no
+```
+
+To
+```
+GatewayPorts yes
+```
+
+##### On AWS 
+
+Now that gateway ports is enabled, I needed to let connections over port 7070 reach the AWS instance. Hence I had to edit the *Security Group* associated with my instance on AWS and add the below. 
+
+<img width="100%" alt="secgrprule" src="https://user-images.githubusercontent.com/33704221/48300854-028c8f80-e50a-11e8-82a9-327934d8617d.png">
+
+##### On the local machine
+
+Now, to specify the bind address on the remote entrypoint, I edited the line which creates the tunnel in initial script as below.
+
+```shell
+
+tmux send-keys -t $n 'ssh -vvv -Nf  -R 0.0.0.0:7070:localhost:22  root@xx.xx.xx.xx -p xx &'  C-m
+```
+
+Basically, I just added ***0.0.0.0:*** to the -R flag.
+
+### The result
+
+Now, whenever my Raspberry Pi starts, I could SSH to it from anywhere in the world as below. 
+
+```
+ssh root@<AWS instance IP> -p 7070
+```
+
+##### Additional info 
+
+This same method can be used to create forwarding for other ports from the remote machine to the local machine. 
+
+For example:
+
+```
+ssh -vvv -Nf  -R 0.0.0.0:80:localhost:80  root@xx.xx.xx.xx -p xx
+```
+The above example could be used to access a web server running locally behind a NAT device from the internet.
+
+##### An example use case
+
+An example use case would be using this method to remotely access a home surveilence system securely. Though, if you are doing something like this, I wouldn't recommend exposing the remote entrypoint port to the internet to avoid the extra step of logging into AWS instance.
+

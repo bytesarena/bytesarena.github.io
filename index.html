@@ -1,0 +1,21 @@
+---
+layout: default
+title: "BytesArena"
+---
+
+<h2>Latest Posts</h2>
+
+<ul class="menu">
+  {% for post in site.posts %}
+  <div class="preview">
+    <li class="menu">
+      <h3>{{ post.title }}</h3>
+      <p>{{ post.date | date_to_string }}</p>
+      <p>{{ post.excerpt }}</p>
+      <h4> <a href="{{ post.url }}"> Read More </a></h4>
+    </li>
+  </div>
+  {% endfor %}
+</ul>
+
+

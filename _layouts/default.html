@@ -1,0 +1,24 @@
+<!DOCTYPE html5>
+  <head>
+    <meta charset="utf-8">
+   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+    <title>{{ page.title }}</title>
+    <link rel="stylesheet" type="text/css" href="/assets/css/style.css"> 
+    <link rel="stylesheet" type="text/css" href="/assets/css/github.css"> 
+    <script src="/assets/js/script.js"></script> 
+  </head>
+  <body>
+<div class="header-cont">
+   <div class="header">
+    {% include navigation.html %}
+   </div>
+</div>
+   <div class="wrapper">
+       <div class="sidebar">
+        {% include sidebar.html %}
+       </div>
+       <div class="content">{{ content }}</div> 
+   </div>
+    
+  </body>
+</html>

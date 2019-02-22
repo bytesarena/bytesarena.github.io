@@ -1,0 +1,24 @@
+---
+layout: default
+title: BytesArena
+---
+
+{% for category in site.categories %}
+
+{% if  category[0]  == "Linux" %}
+  <h2>{{ category[0] }}</h2>
+  <ul>
+    {% for post in category[1] %}
+  <div class="preview">
+    <li class="menu">
+      <h3>{{ post.title }}</h3>
+      <p>{{ post.date | date_to_string }}</p>|<p>{{ post.date | date_to_string }}</p>
+      <p>{{ post.excerpt }}</p>
+      <h4> <a href="{{ post.url }}"> Read More </a></h4>
+    </li>
+  </div>
+    {% endfor %}
+  </ul>
+
+{% endif %}
+{% endfor %}
