@@ -87,22 +87,16 @@ body {
   margin: 0;
 }
 
-.top {
 
+
+.header {
   left: 0;
   width: 100%;
   margin: 0 auto;
   background-color: black;
   top: 0;
   position: fixed;
-  background-color: black;
-  width: 100%;
-}
 
-.header {
-height: 50px;
-display: block;
-position: static;
 }
 
 
