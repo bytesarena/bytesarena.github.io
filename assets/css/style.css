@@ -29,13 +29,13 @@ color: cyan;
 display: none;
 }
 
-@media screen and (min-width: 700px){
-.sidebar {
-    margin-right: 2px;
-    margin-top: 5px;
-    display: block;
-}
-}
+/* @media screen and (min-width: 700px){ */
+/* .sidebar { */
+/*     margin-right: 2px; */
+/*     margin-top: 5px; */
+/*     display: block; */
+/* } */
+/* } */
 ul.side {
 
 list-style-type: none;
