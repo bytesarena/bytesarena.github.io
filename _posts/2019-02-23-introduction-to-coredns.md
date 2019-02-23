@@ -7,6 +7,9 @@ categories: [DNS, Docker]
 CoreDNS is a relatively new DNS server written in Go. CoreDNS was written keeping in mind the evolving needs of today and the ability to work well with cloud native applications. 
 In Kubernetes 1.13, CoreDNS is the default cluster DNS server. 
 
+
+### Objective
+
 The objective of this learning module is to help participants understand the following:
 
 * How a Bind DNS server is setup as a Docker container.
