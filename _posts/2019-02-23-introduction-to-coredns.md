@@ -4,8 +4,6 @@ title: Introduction to CoreDNS
 categories: [DNS, Docker]
 ---
 
-### Objectives
-
 The objective of this learning module is to help participants understand the following:
 
 * How a Bind DNS server is setup as a Docker container.
