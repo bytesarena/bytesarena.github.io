@@ -1,6 +1,6 @@
 ---
 layout: default
-title: "About BA"
+title: "About BytesArena"
 ---
 ## For the love of technology ..
 
