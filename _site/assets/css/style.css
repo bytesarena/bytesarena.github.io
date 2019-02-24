@@ -1,11 +1,19 @@
 html {
 padding: 0;
+margin: 0;
 }
 
-
+body {
+margin: 0px;
+padding: 0px;
+}
 a.home {
 text-decoration: none;
 color: cyan;
+}
+
+h1 {
+margin-top: 0;
 }
 /*---------------------------------------------------------------------------------*/
 .wrapper {
@@ -86,7 +94,8 @@ li.menu {
 .header {
   overflow: hidden;
   background-color: black;
-  padding: 20px 10px;
+  top: 0;
+  left: 0;
 }
 
 /* Style the header links */
@@ -96,7 +105,6 @@ li.menu {
   text-align: center;
   padding: 12px;
   text-decoration: none;
-  font-size: 18px;
   line-height: 25px;
   border-radius: 4px;
   color: lightgreen;
