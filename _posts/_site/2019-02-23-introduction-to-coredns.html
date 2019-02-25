@@ -1,0 +1,751 @@
+<p>CoreDNS is a relatively new DNS server written in Go. CoreDNS was written keeping in mind the evolving needs of today and the ability to work well with cloud native applications. 
+In Kubernetes 1.13, CoreDNS is the default cluster DNS server.</p>
+
+<h3 id="objective">Objective</h3>
+
+<p>The objective of this learning module is to help participants understand the following:</p>
+
+<ul>
+  <li>How a Bind DNS server is setup as a Docker container.</li>
+  <li>How CoreDNS is setup as a Docker container.</li>
+  <li>Basic differences between Bind and Docker.</li>
+  <li>Some basic configuration options in CoreDNS.</li>
+  <li>Understand the role CoreDNS plays in example SaaS environment.</li>
+</ul>
+
+<h3 id="synopsis">Synopsis</h3>
+
+<h4 id="resources-required">Resources required</h4>
+
+<ul>
+  <li>Windows / Linux or MAC with Virtualbox installed.</li>
+  <li>Ubuntu Server 16.04.4 LTS ISO image.</li>
+</ul>
+
+<h4 id="prerequisites">Prerequisites</h4>
+
+<ul>
+  <li>Basic understanding of DNS</li>
+  <li>Basic understanding of Docker</li>
+</ul>
+
+<h3 id="setting-up-the-environment">Setting up the environment</h3>
+
+<ul>
+  <li>
+    <p>Install Ubuntu Server on Virtualbox.</p>
+
+    <ul>
+      <li><a href="https://www.virtualbox.org/manual/UserManual.html#intro-installing"> How to install Virtualbox </a></li>
+      <li><a href="https://tutorials.ubuntu.com/tutorial/tutorial-install-ubuntu-server#0"> How to install Ubuntu Server </a></li>
+    </ul>
+  </li>
+  <li>Install docker on Ubuntu. Instructions <a href="https://docs.docker.com/install/linux/docker-ce/ubuntu/#install-docker-ce-1">here</a>.</li>
+  <li>Log in to your Ubuntu VM.</li>
+</ul>
+
+<h3 id="bind-on-docker">Bind on Docker</h3>
+
+<p>Before we start with CoreDNS, let’s take a look at how to run Bind as a Docker container. Since we are already familiar with Bind, this should help us get some context on CoreDNS by providing us a comparison between CoreDNS and Bind.</p>
+
+<p>To begin, we wll create an ubuntu container and install Bind in it.</p>
+
+<p>Run the below command to deploy the Ubuntu container for Bind.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -it -p 53:53/udp --name bind --hostname bind ubuntu bash
+</code></pre></div></div>
+
+<p>Your prompt should have changed to something similar to the below.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@bind:/#
+</code></pre></div></div>
+<p>You are now in the container where you will install Bind.</p>
+
+<p>Let’s proceed with the installation.</p>
+
+<p>Run the following commands in the container to install Bind and related tools. We will also install Vim which will let s edit configuration file.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>apt update
+apt install bind9 bind9utils vim -y
+</code></pre></div></div>
+<p>We will be configuring Bind as a simple forwarding server.</p>
+
+<p>Run the below command to edit the configuration file.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vi /etc/bind/named.conf.options
+</code></pre></div></div>
+<p>Edit the configuration file as below.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>options {
+        directory "/var/cache/bind";
+         forwarders {
+                10.192.3.10;
+         };
+
+        listen-on { any; };
+};
+</code></pre></div></div>
+<p>Now, let’s start the DNS service.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>service bind9 start
+</code></pre></div></div>
+<p>The expected output is as below.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@bind:/# service bind9 start
+ * Starting domain name service... bind9                                                                                                                                                                                                 [ OK] 
+</code></pre></div></div>
+<p>Detach from the container using the keyboard combination &lt; <strong>CTRL+P Q</strong> &gt;.</p>
+
+<p>You should have detached from the container now.</p>
+
+<p>Query the localhost for the A record of google.com.</p>
+
+<p>The output should be as below.</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> # dig @localhost google.com
+
+; &lt;&lt;&gt;&gt; DiG 9.11.3-1ubuntu1.2-Ubuntu &lt;&lt;&gt;&gt; @localhost google.com
+; (2 servers found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 28564
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: 50d02d3da9df35d4f87516ce5be9febb259bf180bbc6261a (good)
+;; QUESTION SECTION:
+;google.com.                    IN      A
+
+;; ANSWER SECTION:
+google.com.             2       IN      A       172.217.6.46
+
+;; Query time: 6 msec
+;; SERVER: ::1#53(::1)
+;; WHEN: Mon Nov 12 22:29:15 UTC 2018
+;; MSG SIZE  rcvd: 83
+</code></pre></div></div>
+
+<p>We have now run Bind from a Docker container and tested the server.</p>
+
+<p>Let’s move on to CoreDNS.</p>
+
+<p>Before we move on, we will need to kill the Bind container to free up UDP port 53 on the host.</p>
+
+<p>Run the below command to kill the container.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker kill bind
+</code></pre></div></div>
+<p>Confirm that the container is no longer running with the ‘docker ps’ command. 
+The output should be as below.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#  docker ps
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS               NAMES
+</code></pre></div></div>
+
+<h3 id="installing-coredns">Installing CoreDNS</h3>
+
+<p>CoreDNS does provide a docker image but we will be looking at how to run it manually from an Ubuntu container.</p>
+
+<ul>
+  <li>Deploy an Ubuntu container with the name coredns-manual. Ensure that ports 53 on the host is mapped to the container.</li>
+</ul>
+
+<p>The below command deploys the container.</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -it -p 53:53/udp --name coredns-manual --hostname coredns ubuntu bash
+</code></pre></div></div>
+
+<p>Your prompt should have changed to something similar to the below.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@coredns:/#
+</code></pre></div></div>
+<ul>
+  <li>To install new packages, you must first update the package manager for Ubuntu. The package manage is ‘apt’. You can update ‘apt’ with the command ‘apt update’. The command and output are below.</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@coredns:/# apt update
+</code></pre></div></div>
+
+<h5 id="installing-coredns-1">Installing CoreDNS</h5>
+
+<p>Below are the steps to install CoreDNS</p>
+
+<p>Precompiled binary executable file for CoreDNS can be obtained from the CoreDNS Github repository.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>apt install wget vim -y
+wget https://github.com/coredns/coredns/releases/download/v1.2.5/coredns_1.2.5_linux_amd64.tgz
+mkdir ~/coredns
+mv coredns_1.2.5_linux_amd64.tgz ~/coredns
+cd ~/coredns
+tar -xvzf coredns_1.2.5_linux_amd64.tgz
+rm -f coredns_1.2.5_linux_amd64.tgz
+
+</code></pre></div></div>
+<p>This should produce an executable file named coredns.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@coredns:~/coredns# ls -l
+total 50440
+-rwxr-xr-x 1 www-data www-data 39737920 Oct 24 20:10 coredns
+</code></pre></div></div>
+
+<p>Run the executable file.</p>
+
+<p>The output should be as below.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@coredns:~/coredns# ./coredns
+.:53
+2018/10/31 19:25:54 [INFO] CoreDNS-1.2.5
+2018/10/31 19:25:54 [INFO] linux/amd64, go1.11.1, 204537b
+CoreDNS-1.2.5
+linux/amd64, go1.11.1, 204537b
+</code></pre></div></div>
+
+<p>Notice that the execution does not complete and go the prompt “root@coredns:~/coredns#”
+CoreDNS server is now running.</p>
+
+<h5 id="test-the-coredns-server">Test the CoreDNS server</h5>
+
+<p>Detach from the container using the keyboard combination &lt; <strong>CTRL+P Q</strong> &gt;.</p>
+
+<p>Now you should have detached from the container and shuold be in the prompt of the VM.</p>
+
+<p>Run the command ‘docker ps’. Output should be as below(except for the Container ID).</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker ps
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS                                      NAMES
+858520e82135        ubuntu              "bash"              4 hours ago         Up 17 minutes       0.0.0.0:53-&gt;53/udp, 0.0.0.0:443-&gt;443/tcp   coredns-manual
+</code></pre></div></div>
+<p>Under PORTS, “0.0.0.0:53-&gt;53/udp” shows that UDP port 53 on the host is mapped to UDP port 53 on the container.</p>
+
+<p>Perform a few DNS queries against localhost. Notice that the response always looks similar to this.</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> # dig @localhost example.com
+
+; &lt;&lt;&gt;&gt; DiG 9.11.3-1ubuntu1.2-Ubuntu &lt;&lt;&gt;&gt; @localhost example.com
+; (2 servers found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 25683
+;; flags: qr aa rd; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 3
+;; WARNING: recursion requested but not available
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: cbc94e442b78ed38 (echoed)
+;; QUESTION SECTION:
+;example.com.                  IN      A
+
+;; ADDITIONAL SECTION:
+example.com.           0       IN      A       172.17.0.1
+_udp.example.com.      0       IN      SRV     0 0 59496 .
+
+;; Query time: 0 msec
+;; SERVER: ::1#53(::1)
+;; WHEN: Wed Oct 31 19:41:50 UTC 2018
+;; MSG SIZE  rcvd: 117
+
+
+</code></pre></div></div>
+
+<p>This is expected. Since no configuration has been done, CoreDNS loads a plugin called <a href="https://coredns.io/plugins/whoami/">whoami</a> that responds with the IP address and port of the client.</p>
+
+<h5 id="configuring-coredns">Configuring CoreDNS</h5>
+
+<h6 id="corefile">Corefile</h6>
+
+<p>Configuration parameters for CoreDNS are defined in a file named ‘Corefile’.
+CoreDNS is designed to run multiple server instances on the same host. These servers can run on different ports or the same port.
+A server block is a block of configuration statements in the corefile which define a server. Zone statements are configured in server blocks. 
+If there are multiple server blocks listening on the same port (eg: port 53), the server will send a response from the server block with the zone with the closest match to the domain in the queried.</p>
+
+<p>Below is a sample server block</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>test.com{
+
+}
+</code></pre></div></div>
+<p>By default the server listens on port 53. 
+To configure the server to listen on another port, say 1053, define the server block as below.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>test.com:53 {
+
+}
+</code></pre></div></div>
+
+<h6 id="plugins">Plugins</h6>
+
+<p>CoreDNS works by using plugins for different functionality. Plugin are programs that increase the functionality of CoreDNS. Plugins can be in-tree(from CoreDNS team) or external plugins(developed by the community or third parties).</p>
+
+<p>Here are a few plugins which we will be working with:</p>
+
+<ul>
+  <li><strong><a href="https://coredns.io/plugins/file">file</a></strong>: Reads zone data from a zone file.</li>
+  <li><strong><a href="https://coredns.io/plugins/log">log</a></strong>: Logs queries. By default queries are logged to STDOUT.</li>
+  <li><strong><a href="https://coredns.io/plugins/forward">forward</a></strong>: Forward queries to a forwarder.</li>
+</ul>
+
+<p>These are in-tree plugins and don’t require any additional setup. These plugins can be invoked by calling them from the ‘Corefile’ as seen below.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>test.com:53 {
+    log
+}
+</code></pre></div></div>
+
+<p>CoreDNS by default does not support recursively resolving queries. The ‘forward’ in-tree plugin can be used to forward queries to a forwarder. 
+There are external plugins that can bring this functionality to CoreDNS</p>
+
+<p>To get started attach to the container ‘coredns-manual’.</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#docker attach coredns-manual
+</code></pre></div></div>
+
+<p>Stop the running process using the keyboard combination &lt;CTRL + C&gt;.</p>
+
+<p>Confirm that the working directory is ‘/root/coredns’.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@coredns:~/coredns# pwd
+/root/coredns
+</code></pre></div></div>
+<p>If not, change directory to /root/coredns.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>cd /root/coredns
+</code></pre></div></div>
+
+<p>Create a file named ‘Corefile’.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>vi Corefile
+</code></pre></div></div>
+<p>Insert the below text into the file.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>test.com {
+    file db.test.com
+}
+</code></pre></div></div>
+<p>Create a file named db.test.com and insert the below text into the file.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>$ORIGIN test.com.
+@       3600 IN SOA ns1.test.com. admin.test.com. (
+                                2017042745 ; serial
+                                7200       ; refresh (2 hours)
+                                3600       ; retry (1 hour)
+                                1209600    ; expire (2 weeks)
+                                3600       ; minimum (1 hour)
+                                )
+
+        3600 IN NS ns1.test.com.
+        3600 IN NS ns2.test.com.
+
+www     IN A     10.0.0.1
+ns1     IN A     10.10.10.10
+ns2     IN A     20.20.20.20
+</code></pre></div></div>
+
+<p>Start CoreDNS with the below command.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./coredns -conf Corefile
+</code></pre></div></div>
+
+<p>Detach from the container using the keyboard combination &lt; CTRL+P Q &gt;.</p>
+
+<p>Query localhost for www.test.com. You should be able to see output as below.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code> #  dig @localhost www.test.com                                                                                                     1 ↵
+
+; &lt;&lt;&gt;&gt; DiG 9.11.3-1ubuntu1.2-Ubuntu &lt;&lt;&gt;&gt; @localhost www.test.com
+; (2 servers found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 51555
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 2, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;www.test.com.                  IN      A
+
+;; ANSWER SECTION:
+www.test.com.           3600    IN      A       10.0.0.1
+
+;; AUTHORITY SECTION:
+test.com.               3600    IN      NS      ns1.test.com.
+test.com.               3600    IN      NS      ns2.test.com.
+
+;; Query time: 2 msec
+;; SERVER: ::1#53(::1)
+;; WHEN: Thu Nov 01 20:16:07 UTC 2018
+;; MSG SIZE  rcvd: 126
+</code></pre></div></div>
+
+<p>In the above excersise, we used the <em>file</em> plugin. The statement <em>file db.test.com</em> is to use the file ‘db.test.com’ as the zone file for the zone ‘test.com’.</p>
+
+<p>Now we will look at the <strong>log</strong> plugin.</p>
+
+<p>To see the ‘log’ plugin in action, let’s look at the logs for the ‘coredns-manual’ container.
+The command and output are below.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker logs coredns-manual --tail 10
+root@coredns:~/coredns# ./coredns -conf Corefile
+test.com.:53
+2018/11/02 13:30:31 [INFO] CoreDNS-1.2.5
+2018/11/02 13:30:31 [INFO] linux/amd64, go1.11.1, 204537b
+CoreDNS-1.2.5
+linux/amd64, go1.11.1, 204537b
+</code></pre></div></div>
+<p>Attach to the container again.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker attach coredns-manual
+</code></pre></div></div>
+
+<p>Stop the running process using the keyboard combination &lt;CTRL + C&gt;.</p>
+
+<p>Edit the file ‘Corefile’ and to match the below.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>
+test.com {
+    file db.test.com
+    log
+}
+~
+</code></pre></div></div>
+
+<p>Start CoreDNS server.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./coredns -conf Corefile
+</code></pre></div></div>
+
+<p>Detach from the container using the keyboard combination &lt; CTRL+P Q &gt;.</p>
+
+<p>Query localhost as above for www.test.com.</p>
+
+<p>Now, check the logs for the container again.</p>
+
+<p>You should see logs as below.</p>
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@coredns:~/coredns#./coredns -conf Corefile
+test.com.:53
+2018/11/02 13:39:19 [INFO] CoreDNS-1.2.5
+2018/11/02 13:39:19 [INFO] linux/amd64, go1.11.1, 204537b
+CoreDNS-1.2.5
+linux/amd64, go1.11.1, 204537b
+172.17.0.1:60210 - [02/Nov/2018:13:48:05 +0000] 24028 "A IN www.test.com. udp 54 false 4096" NOERROR qr,aa,rd,ra 126 0.004729567s
+</code></pre></div></div>
+
+<p>Note that the logs now include query logs.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>172.17.0.1:60210 - [02/Nov/2018:13:48:05 +0000] 24028 "A IN www.test.com. udp 54 false 4096" NOERROR qr,aa,rd,ra 126 0.004729567s
+</code></pre></div></div>
+
+<p>We are able to see these logs in docker logs since CoreDNS is running in a docker container. If CoreDNS was running on the host and not in a container, these logs would be printed to STDOUT.</p>
+
+<p>Now, we will configure the <strong>forward</strong> plugin.</p>
+
+<p>The forward plugin can forward queries to a specific set of servers. The plugin can also load balance using different methods between these servers.</p>
+
+<p>We will configure a global forwarder and a forwarder for a specific domain name using the plugin.</p>
+
+<p>Query localhost for google.com.
+The response should be as below.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># dig @localhost google.com                                                                                                        1 ↵
+
+; &lt;&lt;&gt;&gt; DiG 9.11.3-1ubuntu1.2-Ubuntu &lt;&lt;&gt;&gt; @localhost google.com
+; (2 servers found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: REFUSED, id: 4455
+;; flags: qr rd; QUERY: 1, ANSWER: 0, AUTHORITY: 0, ADDITIONAL: 1
+;; WARNING: recursion requested but not available
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+; COOKIE: d7358f9f438c2648 (echoed)
+;; QUESTION SECTION:
+;google.com.                    IN      A
+
+;; Query time: 0 msec
+;; SERVER: ::1#53(::1)
+;; WHEN: Fri Nov 02 14:09:53 UTC 2018
+;; MSG SIZE  rcvd: 51
+
+</code></pre></div></div>
+
+<p>Note that the query response is REFUSED.</p>
+
+<p>Attach to the container again.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker attach coredns-manual
+</code></pre></div></div>
+
+<p>Stop the running process using the keyboard combination &lt;CTRL + C&gt;.</p>
+
+<p>Edit the file ‘Corefile’ and to match the below.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>test.com {
+    file db.test.com
+    log
+}
+
+. {
+  forward . 10.192.3.10
+}
+
+</code></pre></div></div>
+
+<p>Start CoreDNS server.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./coredns -conf Corefile
+</code></pre></div></div>
+
+<p>Detach from the container using the keyboard combination &lt; CTRL+P Q &gt;.</p>
+
+<p>Query localhost for google.com.
+The response should be as below.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>) # dig @localhost google.com                                                                                                      127 ↵
+
+; &lt;&lt;&gt;&gt; DiG 9.11.3-1ubuntu1.2-Ubuntu &lt;&lt;&gt;&gt; @localhost google.com
+In ; (2 servers found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 52732
+;; flags: qr rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 0, ADDITIONAL: 1
+
+;; OPT PSEUDOSECTION:
+; EDNS: version: 0, flags:; udp: 4096
+;; QUESTION SECTION:
+;google.com.                    IN      A
+
+;; ANSWER SECTION:
+google.com.             36      IN      A       216.58.192.14
+
+;; Query time: 12 msec
+;; SERVER: ::1#53(::1)
+;; WHEN: Fri Nov 02 14:13:49 UTC 2018
+;; MSG SIZE  rcvd: 65
+
+</code></pre></div></div>
+
+<p>The query was forwarded the 10.192.3.10 and resolved.</p>
+
+<p>Below are the newly added entries in the ‘Corefile’.</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>. {
+  forward . 10.192.3.10
+}
+</code></pre></div></div>
+
+<p>The zone name here is ‘.’ (root). In the plugin statement we say ‘forward . 10.192.3.10’ forward all queries under root to 10.192.3.10.</p>
+
+<p>Now query localhost for www.test.com. The query is resolving from the authoritative zone.</p>
+
+<p>This is because, since both server blocks listen on the default port (53), the query for www.test.com is resolved from the server block for test.com and anything else would be resolved from the server block for root.</p>
+
+<p>Now we will forward queries for a particular domain.</p>
+
+<p>Below are the steps.</p>
+
+<ul>
+  <li>Copy the coredns executable, the Corefile and the file db.test.com from the container to the host.</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker cp coredns-manual:/root/coredns/coredns .
+#  docker cp coredns-manual:/root/coredns/Corefile .
+#  docker cp coredns-manual:/root/coredns/db.test.com .
+</code></pre></div></div>
+
+<ul>
+  <li>Confirm that the files have been copied.</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#  ls -l
+total 38816
+-rwxr-xr-x 1 root root 39737920 Oct 24 20:10 coredns
+-rw-r--r-- 1 root root       73 Nov  2 14:11 Corefile
+-rw-r--r-- 1 root root      367 Nov  1 20:25 db.test.com
+</code></pre></div></div>
+
+<ul>
+  <li>Modify the Corefile as below.</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>example.com {
+    file db.example.com
+    log
+}
+</code></pre></div></div>
+
+<ul>
+  <li>Rename db.test.com to db.example.com</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>mv db.test.com db.example.com
+</code></pre></div></div>
+
+<ul>
+  <li>Replace all instances of the word ‘test.com’ in db.example.com with ‘example.com’</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>sed -i 's/test.com/example.com/g' db.example.com
+</code></pre></div></div>
+
+<ul>
+  <li>Create a new container named ‘coredns-forwarder’.</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker run -itd --name coredns-forwarder ubuntu bash
+</code></pre></div></div>
+
+<ul>
+  <li>Confirm that the container has been created.</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#  docker ps
+CONTAINER ID        IMAGE               COMMAND             CREATED             STATUS              PORTS                                      NAMES
+b91d9140f02b        ubuntu              "bash"              4 seconds ago       Up 3 seconds                                                   coredns-forwarder
+858520e82135        ubuntu              "bash"              47 hours ago        Up About an hour    0.0.0.0:53-&gt;53/udp, 0.0.0.0:443-&gt;443/tcp   coredns-manual 
+</code></pre></div></div>
+
+<ul>
+  <li>Copy the files to the new container.</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker cp coredns coredns-forwarder:/root/
+docker cp Corefile coredns-forwarder:/root/
+docker cp db.example.com coredns-forwarder:/root/
+</code></pre></div></div>
+
+<ul>
+  <li>Confirm that the files have been copied.</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#  docker exec coredns-forwarder ls /root
+Corefile
+coredns
+db.example.com
+</code></pre></div></div>
+
+<ul>
+  <li>Attach to the container ‘coredns-forwarder’</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>docker attach coredns-forwarder
+ 
+</code></pre></div></div>
+
+<ul>
+  <li>Change directory to /root and run the CoreDNS server</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>root@b91d9140f02b:/# cd /root
+root@b91d9140f02b:~# ./coredns -conf Corefile
+example.com.:53
+2018/11/02 14:39:23 [INFO] CoreDNS-1.2.5
+2018/11/02 14:39:23 [INFO] linux/amd64, go1.11.1, 204537b
+CoreDNS-1.2.5
+linux/amd64, go1.11.1, 204537b
+</code></pre></div></div>
+<ul>
+  <li>
+    <p>Detach from the container using the keyboard combination &lt; CTRL+P Q &gt;.</p>
+  </li>
+  <li>
+    <p>Find the IP address of the ‘coredns-forwarder’ container. This is done by inspecting the defaulr docker network (bridge).</p>
+  </li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#  docker network inspect bridge | grep -A 3 coredns-forwarder
+                "Name": "coredns-forwarder",
+                "EndpointID": "09020d084787b9dcff41f82f8c6be6d6d415dbea3ad53e64b66e8cc2411d4eae",
+                "MacAddress": "02:42:ac:11:00:03",
+                "IPv4Address": "172.17.0.3/16",
+                
+</code></pre></div></div>
+
+<ul>
+  <li>Attach to the container ‘coredns-manual’.</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code># docker attach coredns-manual
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Stop the running CoreDNS server with the keyboard combination &lt; CTRL + C &gt;.</p>
+  </li>
+  <li>
+    <p>Edit the Corefile to match below but make sure that the IP address of the forwarder matches the IP address of ‘coredns-forwarder’.</p>
+  </li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>test.com {
+    file db.test.com
+    log
+}
+
+. {
+  forward . 10.192.3.10
+}
+
+example.com {
+  forward example.com 172.17.0.3
+}
+</code></pre></div></div>
+<ul>
+  <li>Start CoreDNS server</li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>./coredns -conf Corefile
+</code></pre></div></div>
+
+<ul>
+  <li>
+    <p>Detach from the container using the keyboard combination &lt; CTRL+P Q &gt;.</p>
+  </li>
+  <li>
+    <p>Query localhost for www.example.com</p>
+  </li>
+</ul>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>#  dig @localhost www.example.com                                                                                            1 ↵
+
+; &lt;&lt;&gt;&gt; DiG 9.11.3-1ubuntu1.2-Ubuntu &lt;&lt;&gt;&gt; @localhost www.example.com
+; (2 servers found)
+;; global options: +cmd
+;; Got answer:
+;; -&gt;&gt;HEADER&lt;&lt;- opcode: QUERY, status: NOERROR, id: 47364
+;; flags: qr aa rd ra; QUERY: 1, ANSWER: 1, AUTHORITY: 2, ADDITIONAL: 0
+
+;; QUESTION SECTION:
+;www.example.com.               IN      A
+
+;; ANSWER SECTION:
+www.example.com.        3600    IN      A       10.0.0.1
+
+;; AUTHORITY SECTION:
+example.com.            3600    IN      NS      ns1.example.com.
+example.com.            3600    IN      NS      ns2.example.com.
+
+;; Query time: 0 msec
+;; SERVER: ::1#53(::1)
+;; WHEN: Fri Nov 02 16:58:20 UTC 2018
+;; MSG SIZE  rcvd: 144
+</code></pre></div></div>
+
+<p>Since port 53 on the host is mapped to port 53 on the container coredns-manual, any queries on port 53 to localhost lands on this container. The query is forwarded from this container to the container ‘coredns-forwarder’ where an authoritative server for the zone ‘example.com’ is running. This is how the query is resolved.</p>
+
+<h6 id="serving-protocols">Serving Protocols</h6>
+
+<p>Currently CoreDNS accepts three different protocols: plain DNS, DNS over TLS and DNS over gRPC. The protocol must me specified on the server block in the Corefile.</p>
+
+<ul>
+  <li><a href="https://en.wikipedia.org/wiki/DNS_over_TLS">Learn more about DNS over TLS</a></li>
+  <li><a href="https://grpc.io/">Learn more about gRPC</a></li>
+</ul>
+
+<h3 id="to-learn-more">To learn more</h3>
+
+<p>If you are interested in learning more about the topics discussed here, here are a few places to visit.</p>
+
+<ul>
+  <li><a href="https://coredns.io/">CoreDNS</a></li>
+  <li><a href="https://coredns.io/plugins/">CoreDNS Plugins</a></li>
+  <li><a href="https://github.com/coredns/coredns">CoreDNS Github</a></li>
+  <li><a href="https://hub.docker.com/r/coredns/coredns/">CoreDNS Docker Image</a></li>
+  <li><a href="https://www.docker.com/">Docker</a></li>
+  <li><a href="https://grpc.io/">gRPC</a></li>
+</ul>
+
