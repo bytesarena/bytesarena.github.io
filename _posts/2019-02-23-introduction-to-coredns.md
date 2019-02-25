@@ -1,6 +1,6 @@
 ---
 layout: post
-title: Introduction to CoreDNS
+title: Introduction to CoreDNS in a Dockerised environment
 categories: [DNS, Docker]
 ---
 
