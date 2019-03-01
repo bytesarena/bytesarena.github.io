@@ -1,7 +1,7 @@
 ---
 layout: post
 title: "Easy to remember subnetting trick"
-categories: Uncategorised
+categories: Networking
 ---
 
 If you are related to the world of networking, you would of course have had to subnet at some point of your career. Though it is rare that you may have to do it without the help of the internet, I am willing to bet that at least most you would have had to do this at least once ( maybe in an interview? ). 
