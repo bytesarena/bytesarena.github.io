@@ -1,86 +1,19 @@
-<!DOCTYPE html5>
-  <head>
-    <meta charset="utf-8">
-   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
-    <title>Introduction to CoreDNS in a Dockerised environment</title>
-    <link rel="stylesheet" type="text/css" href="/assets/css/style.css"> 
-    <link rel="stylesheet" type="text/css" href="/assets/css/github.css"> 
-    <script src="/assets/js/script.js"></script> 
-  </head>
-  <body>
-
-   <div class="header">
-    <div class="header">
-  <a href="/" class="logo">BytesArena</a>
-  <div class="header-right">
-    <a class="active" href="/">Home</a>
-    <a href="/about">About</a>
-  </div>
-</div>
-
-
-   </div>
-   <div class="wrapper">
-       <div class="sidebar">
-        <a href="https://github.com/bytesarena/bytesarena.github.io"><img src="/assets/images/Octocat.png" alt="Github" width="40" height="40">View on Github</img></a>
-
-<h2> Categories </h2>
-
-<ul class="side">
-
-
-<li class="side"> <a href="/cat/DNS.html"> DNS </a> </li>
-
-
-
-<li class="side"> <a href="/cat/DNSSEC.html"> DNSSEC </a> </li>
-
-
-
-<li class="side"> <a href="/cat/Linux.html"> Linux </a> </li>
-
-
-
-<li class="side"> <a href="/cat/Docker.html"> Docker </a> </li>
-
-
-</ul>
-
-
-
-
-
-
-
-<h2> Posts </h2>
-
-
-<ul class="side">
-
-
-
-<li class="side"> <a href="/dns/docker/2019/02/23/introduction-to-coredns.html"> Introduction to CoreDNS in a Dockerised environment</a></li>
-
-
-
-
-<li class="side"> <a href="/linux/2019/02/20/Pi-Reverse-SSH-Tunnel.html"> Reverse SSH Tunnel</a></li>
-
-
-
-
-<li class="side"> <a href="/dns/dnssec/2019/02/19/dnssec-keys-and-signing-explained.html"> DNSSEC Keys and Signing Explained</a></li>
-
-
-</ul>
-
-       </div>
-       <div class="content"><h2>Introduction to CoreDNS in a Dockerised environment</h2>
-<p>23 Feb 2019 </p> 
-<div class="blog"><p>CoreDNS is a relatively new DNS server written in Go. CoreDNS was written keeping in mind the evolving needs of today and the ability to work well with cloud native applications. 
+<p>CoreDNS is a relatively new DNS server written in Go. CoreDNS was written keeping in mind the evolving needs of today and the ability to work well with cloud native applications. 
 In Kubernetes 1.13, CoreDNS is the default cluster DNS server.</p>
 
-<h3 id="synopsis">synopsis</h3>
+<h3 id="objective">Objective</h3>
+
+<p>The objective of this learning module is to help participants understand the following:</p>
+
+<ul>
+  <li>How a Bind DNS server is setup as a Docker container.</li>
+  <li>How CoreDNS is setup as a Docker container.</li>
+  <li>Basic differences between Bind and Docker.</li>
+  <li>Some basic configuration options in CoreDNS.</li>
+  <li>Understand the role CoreDNS plays in example SaaS environment.</li>
+</ul>
+
+<h3 id="synopsis">Synopsis</h3>
 
 <h4 id="resources-required">Resources required</h4>
 
@@ -816,23 +749,3 @@ example.com.            3600    IN      NS      ns2.example.com.
   <li><a href="https://grpc.io/">gRPC</a></li>
 </ul>
 
-</div>
-
-</div> 
-   </div>
-   <div class=footer>
-   <a class="footer" href="/license.html">License</a>
- | 
-<a class="footer" href="mailto:bytesarena@protonmail.com">Email</a>
- | 
-<a class="footer" href="https://github.com/sandeeprenjith">Github</img></a>
- | 
-<a class="footer" href="https://www.linkedin.com/in/sandeeprenjith">LinkedIn</img></a>
- | 
-<a class="footer" href="https://hub.docker.com/u/rensande">Dockerhub</img></a>
-
-
-   </div>
-    
-  </body>
-</html>
