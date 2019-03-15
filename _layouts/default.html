@@ -1,26 +1,29 @@
 <!DOCTYPE html5>
-  <head>
-    <meta charset="utf-8">
-   <meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
-    <title>{{ page.title }}</title>
-    <link rel="stylesheet" type="text/css" href="/assets/css/style.css"> 
-    <link rel="stylesheet" type="text/css" href="/assets/css/github.css"> 
-    <script src="/assets/js/script.js"></script> 
-  </head>
-  <body>
+<head>
+		<meta charset="utf-8">
+		<meta name="viewport" content="initial-scale=1,maximum-scale=1,user-scalable=no" />
+		<title>{{ page.title }}</title>
+		<link rel="stylesheet" type="text/css" href="/assets/css/style.css"> 
+		<!--Code highlighting-->
+		<link rel="stylesheet" href="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/styles/default.min.css">
+		<script src="//cdnjs.cloudflare.com/ajax/libs/highlight.js/9.15.6/highlight.min.js"></script>
+		<--Github style -->
+		<link rel="stylesheet" href="https://gist.githubusercontent.com/tuzz/3331384/raw/fc0160dd7ea0b4a861533c4d6c232f56291796a3/github.css">
+		<script src="/assets/js/script.js"></script> 
+</head>
+<body>
+		<div class="header">
+		{% include navigation.html %}
+		</div>
+		<div class="wrapper">
+		<div class="sidebar">
+		{% include sidebar.html %}
+		</div>
+		<div class="content">{{ content }}</div> 
+		</div>
+		<div class=footer>
+		{% include footer.html %}
+		</div>
 
-   <div class="header">
-    {% include navigation.html %}
-   </div>
-   <div class="wrapper">
-       <div class="sidebar">
-        {% include sidebar.html %}
-       </div>
-       <div class="content">{{ content }}</div> 
-   </div>
-   <div class=footer>
-   {% include footer.html %}
-   </div>
-    
-  </body>
+</body>
 </html>

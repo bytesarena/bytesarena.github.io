@@ -1,0 +1,239 @@
+<p>If you are related to the world of networking, you would of course have had to subnet at some point of your career. Though it is rare that you may have to do it without the help of the internet, I am willing to bet that at least most you would have had to do this at least once ( maybe in an interview? ).</p>
+
+<p>Here is a neat trick that I like to use as a little cheat for subnetting without using a calculator.</p>
+
+<p>What I do is, I consider the IP addresses as memory units, specifically megabytes. You dont even have to be from the world of computers to be familiar with these memory units.</p>
+
+<p>Consider:</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1 IP Address  = 1 MiB
+</code></pre></div></div>
+<p>Generally in storage devices like flash drives, memory cards and so on, we see the storage capacity incrementing as exponents of 2. The same can be applied in subnetting.</p>
+
+<p>With this I came up with the below table.</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>CIDR</th>
+      <th>Memory Unit</th>
+      <th>Number of IP addresses</th>
+      <th>Comments</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr>
+      <td>/32</td>
+      <td>1 MiB</td>
+      <td>1</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/31</td>
+      <td>2 MiB</td>
+      <td>2</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/30</td>
+      <td>4 MiB</td>
+      <td>4</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/29</td>
+      <td>8 MiB</td>
+      <td>8</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/28</td>
+      <td>16 MiB</td>
+      <td>16</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/27</td>
+      <td>32 MiB</td>
+      <td>32</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/26</td>
+      <td>64 MiB</td>
+      <td>64</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/25</td>
+      <td>128 MiB</td>
+      <td>128</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/24</td>
+      <td>256 MiB</td>
+      <td>256</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/23</td>
+      <td>512 MiB</td>
+      <td>512</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/22</td>
+      <td>1 GiB</td>
+      <td>1024</td>
+      <td>Convert GiB to MiB</td>
+    </tr>
+    <tr>
+      <td>/21</td>
+      <td>2 GiB</td>
+      <td>2048</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/20</td>
+      <td>4 GiB</td>
+      <td>4096</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/19</td>
+      <td>8 GiB</td>
+      <td>8192</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/18</td>
+      <td>16 GiB</td>
+      <td>16384</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/17</td>
+      <td>32 GiB</td>
+      <td>32768</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/16</td>
+      <td>64 GiB</td>
+      <td>65536</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/15</td>
+      <td>128 GiB</td>
+      <td>131072</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/14</td>
+      <td>512 GiB</td>
+      <td>262144</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/13</td>
+      <td>1 TiB</td>
+      <td>524288</td>
+      <td>Convert TiB to Mib</td>
+    </tr>
+    <tr>
+      <td>/12</td>
+      <td>2 TiB</td>
+      <td>1048576</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/11</td>
+      <td>4 TiB</td>
+      <td>2097152</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/10</td>
+      <td>8 TiB</td>
+      <td>4194304</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/9</td>
+      <td>16 TiB</td>
+      <td>8388608</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/8</td>
+      <td>32 TiB</td>
+      <td>16777216</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/7</td>
+      <td>64 TiB</td>
+      <td>33554432</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/6</td>
+      <td>128 TiB</td>
+      <td>67108864</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/5</td>
+      <td>256 TiB</td>
+      <td>134217728</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/4</td>
+      <td>512 TiB</td>
+      <td>268435456</td>
+      <td>Convert PiB to Mib</td>
+    </tr>
+    <tr>
+      <td>/3</td>
+      <td>1 PiB</td>
+      <td>536870912</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/2</td>
+      <td>2 PiB</td>
+      <td>1073741824</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/1</td>
+      <td>4 PiB</td>
+      <td>2147483648</td>
+      <td> </td>
+    </tr>
+    <tr>
+      <td>/0</td>
+      <td>8 PiB</td>
+      <td>4294967296</td>
+      <td> </td>
+    </tr>
+  </tbody>
+</table>
+
+<p>In any given subnet (except /32 which is one IP address), subtract 2 from the number of IP addresses and you get the number of usable IP addresses ( 1 network address and 1 broadcast address).</p>
+
+<p>I agree that this method is not particularly useful with the larger subnets like /8, but this makes it easy to calculate the smaller ones. Anything below /18 is a piece of cake.</p>
+
+<p>On a side note, contrary to popular belief, 1024 MB (Megabyte ) is not equal to 1 GB (Gigabyte). 1000 MB = 1 GB.</p>
+
+<p>The memory units used are Mebibyte (MiB) , Gibibyte (GiB) , Tebibyte (TiB)  and Pebibyte (PiB).</p>
+
+<div class="highlighter-rouge"><div class="highlight"><pre class="highlight"><code>1024 MiB = 1 GiB
+1024 GiB = 1 TiB
+1024 GiB = 1 PiB
+</code></pre></div></div>
+<p>Hope this was useful.</p>
+
