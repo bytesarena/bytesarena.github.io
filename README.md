@@ -16,4 +16,4 @@ I will be posting mostly about Linux, DNS, Docker and Scripting here.
 If you have any suggestions or questions about the content on this site, please feel free to contact me on [bytesarena@protonmail.com](mailto:bytesarena@protonmail.com) or add an [issue](https://github.com/bytesarena/bytesarena.github.io/issues), [pullrequest](https://github.com/bytesarena/bytesarena.github.io/pulls), etc.
 
 
-[License](/license.html)
+[License](https://bytesarena.com/license.html)
